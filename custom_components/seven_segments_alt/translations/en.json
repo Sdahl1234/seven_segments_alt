@@ -1,0 +1,77 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Account is already configured"
+        },
+        "error": {
+            "connection_error": "Failed to connect"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "name": "Device name",
+                    "entity_id": "Camera"
+                }
+            }
+        }
+    },
+	"entity": {
+		"sensor": {
+			"ss_ocr": {
+				"name": "OCR"
+			}
+		},
+		"image": {
+			"ss_image": {
+				"name": "Camera Image"
+			},
+			"ss_image_pro": {
+				"name": "OCR Image"
+			},
+			"ss_image_crop": {
+				"name": "Carmra crop Image"
+			}
+		},
+		"image_processing": {
+			"ss_img_ssocr": {
+                "name": "OCR Unit"
+			}
+		},
+		"button": {
+			"ss_save_data": {
+				"name": "Load data"
+			},
+			"ss_load_data": {
+				"name": "Save data"
+			}
+		},
+		"number": {
+			"ss_x_position": {
+				"name": "X position"
+			},
+			"ss_y_position": {
+				"name": "y position"
+			},
+			"ss_height": {
+				"name": "Height"
+			},
+			"ss_width": {
+				"name": "Width"
+			},
+			"ss_rotate": {
+				"name": "Rotate"
+			},
+			"ss_threshold": {
+				"name": "Threshold"
+			},
+			"ss_digits": {
+				"name": "Digits"
+			}
+		},
+		"text": {
+			"ss_extra_arguments": {
+				"name": "Extra arguments"
+			}
+		}
+	}
+}

@@ -1,0 +1,13 @@
+"""Const."""
+
+DOMAIN = "seven_segments_alt"
+DATA_COORDINATOR = "seven_coordinator"
+SS_DIGITS = "digits"
+SS_EXTRA_ARGUMENTS = "extra_arguments"
+SS_HEIGHT = "height"
+SS_ROTATE = "rotate"
+SS_THRESHOLD = "threshold"
+SS_WIDTH = "width"
+SS_X_POS = "x_position"
+SS_Y_POS = "y_position"
+SS_CAM = "camera_entity_id"
