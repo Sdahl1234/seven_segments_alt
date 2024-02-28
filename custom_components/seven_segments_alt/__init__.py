@@ -105,7 +105,7 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     image_entity_2: ImageEntity
     image_entity_3: ImageEntity
     ocr_image: Image
-    ocr_entity: ImageProcessingEntity  # ImageProcessingSsocr
+    ocr_entity: ImageProcessingEntity
     ocr_state: str = None
     camera_entity_id: str
     jdata: None
@@ -189,24 +189,30 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
 
     async def save_data(self, append: bool):
         """Save data."""
-        if append:
-            cfile = open(self.filepath, "w", encoding="utf-8")
-        else:
-            cfile = open(self.filepath, "a", encoding="utf-8")
-        ocrdata = json.dumps(self.jdata)
-        cfile.write(ocrdata)
-        cfile.close()
+        try:
+            if append:
+                cfile = open(self.filepath, "w", encoding="utf-8")
+            else:
+                cfile = open(self.filepath, "a", encoding="utf-8")
+            ocrdata = json.dumps(self.jdata)
+            cfile.write(ocrdata)
+            cfile.close()
+        except Exception as ex:  # pylint: disable=broad-except
+            _LOGGER.debug(f"Save data failed: {ex}")  # noqa: G004
 
     async def load_data(self):
         """Load data."""
-        cfile = open(self.filepath, encoding="utf-8")
-        ocrdata = cfile.read()
-        cfile.close()
-        _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
-        _LOGGER.debug(f"jsonload: {json.loads(ocrdata)}")  # noqa: G004
+        try:
+            cfile = open(self.filepath, encoding="utf-8")
+            ocrdata = cfile.read()
+            cfile.close()
+            _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
+            _LOGGER.debug(f"jsonload: {json.loads(ocrdata)}")  # noqa: G004
 
-        self.jdata = json.loads(ocrdata)
-        self.data_loaded = True
+            self.jdata = json.loads(ocrdata)
+            self.data_loaded = True
+        except Exception as ex:  # pylint: disable=broad-except
+            _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
 
     async def _async_update_data(self):
         try:

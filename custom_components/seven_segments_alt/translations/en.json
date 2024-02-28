@@ -39,10 +39,10 @@
 		},
 		"button": {
 			"ss_save_data": {
-				"name": "Load data"
+				"name": "Save data"
 			},
 			"ss_load_data": {
-				"name": "Save data"
+				"name": "Load data"
 			}
 		},
 		"number": {
