@@ -8,6 +8,7 @@ import subprocess
 
 from PIL import Image
 
+from homeassistant.components.camera import async_get_image
 from homeassistant.components.image_processing import (
     ImageProcessingDeviceClass,
     ImageProcessingEntity,
@@ -155,11 +156,9 @@ class ImageProcessingSsocr(SSEntity, ImageProcessingEntity):
 
         This method is a coroutine.
         """
-        camera = self.hass.components.camera
-
         try:
-            image: Image = await camera.async_get_image(
-                self.camera_entity, timeout=self.timeout
+            image: Image = await async_get_image(
+                self.hass, entity_id=self.camera_entity, timeout=self.timeout
             )
             self.data_coordinator.ocr_image = image
             # image_last_updated = datetime.now()
