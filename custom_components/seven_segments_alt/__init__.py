@@ -14,8 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ENTITY_ID, CONF_NAME, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
-
-# from homeassistant.helpers.discovery import async_load_platform
+from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 # from . import ImageProcessingSsocr
@@ -49,8 +48,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: HomeAssistant, config: ConfigType):  # noqa: D103
     hass.async_create_task(
-        hass.helpers.discovery.async_load_platform(
-            Platform.IMAGE_PROCESSING, DOMAIN, {}, config
+        async_load_platform(hass, Platform.IMAGE_PROCESSING, DOMAIN, {}, config
         )
     )
     return True
