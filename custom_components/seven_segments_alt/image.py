@@ -73,7 +73,7 @@ class SSImage_Crop(SSEntity, ImageEntity):
             roi_img.save(img_byte_arr, format="PNG")
             img_byte_arr = img_byte_arr.getvalue()
 
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(ex)
             return None
         return img_byte_arr
@@ -107,13 +107,16 @@ class SSImage_Pro(SSEntity, ImageEntity):
         """Return bytes of image."""
         try:  # noqa: SIM105
             _LOGGER.debug(self.data_coordinator.processed_name)
-            img = Image.open(self.data_coordinator.processed_name, mode="r")
+            img = await self.hass.async_add_executor_job(
+                Image.open, self.data_coordinator.processed_name, "r"
+            )
+            # img = Image.open(self.data_coordinator.processed_name, mode="r")
             roi_img = img.convert("RGB")
             img_byte_arr = io.BytesIO()
             roi_img.save(img_byte_arr, format="PNG")
             img_byte_arr = img_byte_arr.getvalue()
 
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(ex)
             return None
         return img_byte_arr
@@ -147,7 +150,7 @@ class SSImage(SSEntity, ImageEntity):
         """Return bytes of image."""
         try:
             _LOGGER.debug("New ss image")
-            return self.data_coordinator.ocr_image.content
-        except Exception as ex:  # pylint: disable=broad-except
+            return self.data_coordinator.ocr_image.content  # noqa: TRY300
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(ex)
             return None

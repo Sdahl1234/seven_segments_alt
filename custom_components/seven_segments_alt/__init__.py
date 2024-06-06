@@ -1,4 +1,5 @@
 """The seven_segments component."""
+
 # import asyncio
 from datetime import datetime, timedelta
 import json
@@ -48,8 +49,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: HomeAssistant, config: ConfigType):  # noqa: D103
     hass.async_create_task(
-        async_load_platform(hass, Platform.IMAGE_PROCESSING, DOMAIN, {}, config
-        )
+        async_load_platform(hass, Platform.IMAGE_PROCESSING, DOMAIN, {}, config)
     )
     return True
 
@@ -178,7 +178,9 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
     async def file_exits(self):
         """Do file exists."""
         try:
-            f = open(self.filepath, encoding="utf-8")
+            f = await self.hass.async_add_executor_job(
+                open, self.filepath, "r", -1, "utf-8"
+            )
             f.close()
         except FileNotFoundError:
             # save a new file
@@ -189,19 +191,25 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         """Save data."""
         try:
             if append:
-                cfile = open(self.filepath, "w", encoding="utf-8")
+                cfile = await self.hass.async_add_executor_job(
+                    open, self.filepath, "w", -1, "utf-8"
+                )
             else:
-                cfile = open(self.filepath, "a", encoding="utf-8")
+                cfile = await self.hass.async_add_executor_job(
+                    open, self.filepath, "a", -1, "utf-8"
+                )
             ocrdata = json.dumps(self.jdata)
             cfile.write(ocrdata)
             cfile.close()
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Save data failed: {ex}")  # noqa: G004
 
     async def load_data(self):
         """Load data."""
         try:
-            cfile = open(self.filepath, encoding="utf-8")
+            cfile = await self.hass.async_add_executor_job(
+                open, self.filepath, "r", -1, "utf-8"
+            )
             ocrdata = cfile.read()
             cfile.close()
             _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
@@ -209,7 +217,7 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
 
             self.jdata = json.loads(ocrdata)
             self.data_loaded = True
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
 
     async def _async_update_data(self):
@@ -221,6 +229,6 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
                 self.image_entity.image_last_updated = datetime.now()
                 self.image_entity_2.image_last_updated = datetime.now()
                 self.image_entity_3.image_last_updated = datetime.now()
-            return None
-        except Exception as ex:  # pylint: disable=broad-except
+            return None  # noqa: TRY300
+        except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"update failed: {ex}")  # noqa: G004
