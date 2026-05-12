@@ -16,6 +16,7 @@ from homeassistant.const import CONF_ENTITY_ID, CONF_NAME, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.discovery import async_load_platform
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 # from . import ImageProcessingSsocr
@@ -34,6 +35,8 @@ from .const import (
 )
 
 # from .image_processing import ImageProcessingSsocr
+
+STORAGE_VERSION = 1
 
 PLATFORMS = [
     Platform.BUTTON,
@@ -59,9 +62,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     ei = entry.data.get(CONF_ENTITY_ID)
     name = entry.data.get(CONF_NAME)
-    data_coordinator = SSDataCoordinator(hass, ei, name)
-    await data_coordinator.file_exits()
-    await data_coordinator.load_data()
+    data_coordinator = SSDataCoordinator(hass, ei, name, entry.entry_id)
+    await data_coordinator.async_init_data()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {}
 
@@ -120,7 +122,7 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         SS_CAM: "",
     }
 
-    def __init__(self, hass: HomeAssistant, ei: str, name: str) -> None:
+    def __init__(self, hass: HomeAssistant, ei: str, name: str, entry_id: str) -> None:
         """Initialize my coordinator."""
         super().__init__(
             hass,
@@ -134,6 +136,7 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.always_update = True
         self._name = name
         self.componentname = name
+        self.store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}")
         self.filepath = Path(self.hass.config.config_dir) / "ssocr-{}.json".format(
             self.componentname.replace(" ", "_")
         )
@@ -174,48 +177,53 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.jdata[SS_EXTRA_ARGUMENTS] = "-cdecimal"
         self.jdata[SS_CAM] = self.camera_entity_id
 
-    async def file_exits(self):
-        """Do file exists."""
-        try:
-            f = await self.hass.async_add_executor_job(
-                open, self.filepath, "r", -1, "utf-8"
+    async def async_init_data(self):
+        """Load data from storage, migrating from legacy file if needed."""
+        stored = await self.store.async_load()
+        if stored is not None:
+            self.jdata = stored
+            self.data_loaded = True
+            return
+
+        # Migrate from the legacy plain-JSON file if it exists.
+        def _read_legacy_file():
+            try:
+                with self.filepath.open(encoding="utf-8") as fh:
+                    return json.loads(fh.read())
+            except FileNotFoundError:
+                return None
+
+        legacy = await self.hass.async_add_executor_job(_read_legacy_file)
+        if legacy is not None:
+            _LOGGER.info(
+                "Migrating seven_segments_alt data from %s to HA storage",
+                self.filepath,
             )
-            f.close()
-        except FileNotFoundError:
-            # save a new file
-            await self.set_default_data()
-            await self.save_data(False)
+            self.jdata = legacy
+            await self.store.async_save(self.jdata)
+            await self.hass.async_add_executor_job(self.filepath.unlink)
+            self.data_loaded = True
+            return
+
+        # No existing data — initialise with defaults.
+        await self.set_default_data()
+        await self.store.async_save(self.jdata)
 
     async def save_data(self, append: bool):
-        """Save data."""
+        """Save data to HA storage."""
         try:
-            if append:
-                cfile = await self.hass.async_add_executor_job(
-                    open, self.filepath, "w", -1, "utf-8"
-                )
-            else:
-                cfile = await self.hass.async_add_executor_job(
-                    open, self.filepath, "a", -1, "utf-8"
-                )
-            ocrdata = json.dumps(self.jdata)
-            cfile.write(ocrdata)
-            cfile.close()
+            await self.store.async_save(self.jdata)
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"Save data failed: {ex}")  # noqa: G004
 
     async def load_data(self):
-        """Load data."""
+        """Load data from HA storage."""
         try:
-            cfile = await self.hass.async_add_executor_job(
-                open, self.filepath, "r", -1, "utf-8"
-            )
-            ocrdata = cfile.read()
-            cfile.close()
-            _LOGGER.debug(f"ocrdata: {ocrdata}")  # noqa: G004
-            _LOGGER.debug(f"jsonload: {json.loads(ocrdata)}")  # noqa: G004
-
-            self.jdata = json.loads(ocrdata)
-            self.data_loaded = True
+            stored = await self.store.async_load()
+            if stored is not None:
+                _LOGGER.debug(f"loaded: {stored}")  # noqa: G004
+                self.jdata = stored
+                self.data_loaded = True
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
 
