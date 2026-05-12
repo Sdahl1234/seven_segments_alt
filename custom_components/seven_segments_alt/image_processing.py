@@ -1,7 +1,5 @@
 """Optical character recognition processing of seven segments displays."""
 
-from __future__ import annotations
-
 import io
 import logging
 from pathlib import Path

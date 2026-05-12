@@ -1,7 +1,5 @@
 """Support for SS."""
 
-from __future__ import annotations
-
 import logging
 
 from homeassistant.components.number import NumberEntity, NumberMode
