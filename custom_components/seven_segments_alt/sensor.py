@@ -47,7 +47,7 @@ class ssSensor(SSEntity, SensorEntity):
         return True
 
     @property
-    def state(self):  # noqa: C901
+    def state(self):
         """State."""
         # Hent data fra data_handler her
         return self.data_coordinator.ocr_state

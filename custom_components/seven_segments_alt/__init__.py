@@ -4,7 +4,7 @@
 from datetime import datetime, timedelta
 import json
 import logging
-import os
+from pathlib import Path
 
 from PIL import Image
 
@@ -134,12 +134,11 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
         self.always_update = True
         self._name = name
         self.componentname = name
-        self.filepath = os.path.join(
-            self.hass.config.config_dir,
-            "ssocr-{}.json".format(self.componentname.replace(" ", "_")),
+        self.filepath = Path(self.hass.config.config_dir) / "ssocr-{}.json".format(
+            self.componentname.replace(" ", "_")
         )
         pn = f"{self.componentname}_img_processed.png".replace(" ", "_")
-        self.processed_name = os.path.join(self.hass.config.config_dir, pn)
+        self.processed_name = Path(self.hass.config.config_dir) / pn
         # self.processed_name = f"{self.componentname}_img_processed.png"
         self.mandatory_extras = f"-D{self.processed_name}"
         _LOGGER.debug(self.filepath)
@@ -229,6 +228,5 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
                 self.image_entity.image_last_updated = datetime.now()
                 self.image_entity_2.image_last_updated = datetime.now()
                 self.image_entity_3.image_last_updated = datetime.now()
-            return None  # noqa: TRY300
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"update failed: {ex}")  # noqa: G004

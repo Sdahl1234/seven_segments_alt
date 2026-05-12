@@ -53,7 +53,7 @@ class SSImage_Crop(SSEntity, ImageEntity):
 
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""
-        try:  # noqa: SIM105
+        try:
             _LOGGER.debug(self.data_coordinator.processed_name)
             stream = io.BytesIO(self.data_coordinator.ocr_image.content)
             img = Image.open(stream)
@@ -105,7 +105,7 @@ class SSImage_Pro(SSEntity, ImageEntity):
 
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""
-        try:  # noqa: SIM105
+        try:
             _LOGGER.debug(self.data_coordinator.processed_name)
             img = await self.hass.async_add_executor_job(
                 Image.open, self.data_coordinator.processed_name, "r"

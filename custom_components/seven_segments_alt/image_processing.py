@@ -1,9 +1,10 @@
 """Optical character recognition processing of seven segments displays."""
+
 from __future__ import annotations
 
 import io
 import logging
-import os
+from pathlib import Path
 import subprocess
 
 from PIL import Image
@@ -84,11 +85,8 @@ class ImageProcessingSsocr(SSEntity, ImageProcessingEntity):
         self.data_coordinator.ocr_entity = self
         self._attr_device_class = ImageProcessingDeviceClass.OCR
 
-        self.filepath = os.path.join(
-            self.hass.config.config_dir,
-            "ssocr-{}.png".format(
-                (self.data_coordinator.componentname + "_" + name).replace(" ", "_")
-            ),
+        self.filepath = Path(self.hass.config.config_dir) / "ssocr-{}.png".format(
+            (self.data_coordinator.componentname + "_" + name).replace(" ", "_")
         )
         self.data_coordinator.img_path = self.filepath
         crop = [
@@ -103,15 +101,15 @@ class ImageProcessingSsocr(SSEntity, ImageProcessingEntity):
         threshold = ["-t", str(self.data_coordinator.jdata[SS_THRESHOLD])]
         extra_arguments = self.data_coordinator.jdata[SS_EXTRA_ARGUMENTS].split(" ")
 
-        self._command = (
-            [DEFAULT_BINARY]
-            + crop
-            + digits
-            + threshold
-            + rotate
-            + [self.data_coordinator.mandatory_extras]
-            + extra_arguments
-        )
+        self._command = [
+            DEFAULT_BINARY,
+            *crop,
+            *digits,
+            *threshold,
+            *rotate,
+            self.data_coordinator.mandatory_extras,
+            *extra_arguments,
+        ]
         self._command.append(self.filepath)
         _LOGGER.debug(self._command)
 
@@ -129,15 +127,15 @@ class ImageProcessingSsocr(SSEntity, ImageProcessingEntity):
         threshold = ["-t", str(self.data_coordinator.jdata[SS_THRESHOLD])]
         extra_arguments = self.data_coordinator.jdata[SS_EXTRA_ARGUMENTS].split(" ")
 
-        self._command = (
-            [DEFAULT_BINARY]
-            + crop
-            + digits
-            + threshold
-            + rotate
-            + [self.data_coordinator.mandatory_extras]
-            + extra_arguments
-        )
+        self._command = [
+            DEFAULT_BINARY,
+            *crop,
+            *digits,
+            *threshold,
+            *rotate,
+            self.data_coordinator.mandatory_extras,
+            *extra_arguments,
+        ]
         self._command.append(self.filepath)
         _LOGGER.debug(self._command)
 
