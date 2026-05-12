@@ -43,6 +43,7 @@ class SSText(SSEntity, TextEntity):
     async def async_set_value(self, value: str) -> None:
         """Set the text value."""
         self.data_coordinator.jdata[self.jname] = value
+        self.async_write_ha_state()
 
     @property
     def native_value(self):

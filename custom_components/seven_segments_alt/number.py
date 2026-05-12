@@ -50,6 +50,7 @@ class SSNumber(SSEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         self.data_coordinator.jdata[self.jname] = int(value)
+        self.async_write_ha_state()
         await self.data_coordinator.ocr_entity.set_command()
 
     @property

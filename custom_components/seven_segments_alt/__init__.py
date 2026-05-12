@@ -224,6 +224,7 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
                 _LOGGER.debug(f"loaded: {stored}")  # noqa: G004
                 self.jdata = stored
                 self.data_loaded = True
+                self.async_update_listeners()
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"load data failed: {ex}")  # noqa: G004
 
