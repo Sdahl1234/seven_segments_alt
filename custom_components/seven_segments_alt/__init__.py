@@ -1,7 +1,7 @@
 """The seven_segments component."""
 
 # import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 import json
 import logging
 from pathlib import Path
@@ -18,6 +18,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util import dt as dt_util
 
 # from . import ImageProcessingSsocr
 from .const import (
@@ -60,7 +61,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType):  # noqa: D103
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up the SS."""
 
-    ei = entry.data.get(CONF_ENTITY_ID)
+    ei = entry.options.get(CONF_ENTITY_ID, entry.data.get(CONF_ENTITY_ID))
     name = entry.data.get(CONF_NAME)
     data_coordinator = SSDataCoordinator(hass, ei, name, entry.entry_id)
     await data_coordinator.async_init_data()
@@ -234,8 +235,9 @@ class SSDataCoordinator(DataUpdateCoordinator):  # noqa: D101
             await self.ocr_entity.async_update()
             if self.new_image:
                 self.new_image = False
-                self.image_entity.image_last_updated = datetime.now()
-                self.image_entity_2.image_last_updated = datetime.now()
-                self.image_entity_3.image_last_updated = datetime.now()
+                now_ = dt_util.naive_now()
+                self.image_entity.image_last_updated = now_
+                self.image_entity_2.image_last_updated = now_
+                self.image_entity_3.image_last_updated = now_
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(f"update failed: {ex}")  # noqa: G004

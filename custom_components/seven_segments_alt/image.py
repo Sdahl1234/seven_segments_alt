@@ -49,32 +49,31 @@ class SSImage_Crop(SSEntity, ImageEntity):
         self.jname = name
         self.data_coordinator.image_entity_3 = self
 
+    def _crop_image(self, content: bytes, box: tuple[int, int, int, int]) -> bytes:
+        """Crop the camera image and return it as PNG."""
+        with Image.open(io.BytesIO(content)) as img:
+            roi_img = img.crop(box)
+            img_byte_arr = io.BytesIO()
+            roi_img.save(img_byte_arr, format="PNG")
+        return img_byte_arr.getvalue()
+
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""
         try:
             _LOGGER.debug(self.data_coordinator.processed_name)
-            stream = io.BytesIO(self.data_coordinator.ocr_image.content)
-            img = Image.open(stream)
-            # img = Image.open(self.data_coordinator.img_path, mode="r")
-            # width, height = img.size
-            roi_img = img.crop(
-                (
-                    self.data_coordinator.jdata[SS_X_POS],
-                    self.data_coordinator.jdata[SS_Y_POS],
-                    self.data_coordinator.jdata[SS_X_POS]
-                    + self.data_coordinator.jdata[SS_WIDTH],
-                    self.data_coordinator.jdata[SS_Y_POS]
-                    + self.data_coordinator.jdata[SS_HEIGHT],
-                )
-            )  # convert("RGB")
-            img_byte_arr = io.BytesIO()
-            roi_img.save(img_byte_arr, format="PNG")
-            img_byte_arr = img_byte_arr.getvalue()
-
+            jdata = self.data_coordinator.jdata
+            box = (
+                jdata[SS_X_POS],
+                jdata[SS_Y_POS],
+                jdata[SS_X_POS] + jdata[SS_WIDTH],
+                jdata[SS_Y_POS] + jdata[SS_HEIGHT],
+            )
+            return await self.hass.async_add_executor_job(
+                self._crop_image, self.data_coordinator.ocr_image.content, box
+            )
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(ex)
             return None
-        return img_byte_arr
 
 
 class SSImage_Pro(SSEntity, ImageEntity):
@@ -101,23 +100,24 @@ class SSImage_Pro(SSEntity, ImageEntity):
         self.jname = name
         self.data_coordinator.image_entity = self
 
+    def _convert_image(self, path) -> bytes:
+        """Convert the processed image file to RGB PNG."""
+        with Image.open(path, "r") as img:
+            roi_img = img.convert("RGB")
+            img_byte_arr = io.BytesIO()
+            roi_img.save(img_byte_arr, format="PNG")
+        return img_byte_arr.getvalue()
+
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""
         try:
             _LOGGER.debug(self.data_coordinator.processed_name)
-            img = await self.hass.async_add_executor_job(
-                Image.open, self.data_coordinator.processed_name, "r"
+            return await self.hass.async_add_executor_job(
+                self._convert_image, self.data_coordinator.processed_name
             )
-            # img = Image.open(self.data_coordinator.processed_name, mode="r")
-            roi_img = img.convert("RGB")
-            img_byte_arr = io.BytesIO()
-            roi_img.save(img_byte_arr, format="PNG")
-            img_byte_arr = img_byte_arr.getvalue()
-
         except Exception as ex:  # pylint: disable=broad-except  # noqa: BLE001
             _LOGGER.debug(ex)
             return None
-        return img_byte_arr
 
 
 class SSImage(SSEntity, ImageEntity):

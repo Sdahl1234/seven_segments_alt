@@ -15,6 +15,15 @@
             }
         }
     },
+	"options": {
+	    "step": {
+	        "init": {
+	            "data": {
+	                "entity_id": "Camera"
+	            }
+	        }
+	    }
+	},
 	"entity": {
 		"sensor": {
 			"ss_ocr": {

@@ -1,5 +1,6 @@
 """Adds config flow for ss integration."""
-import voluptuous as vol
+
+import probatio
 
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
@@ -12,7 +13,7 @@ from .const import DOMAIN
 
 # _LOGGER = logging.getLogger(__name__)
 
-# DATA_SCHEMA = vol.Schema({vol.Required(CONF_ENTITY_ID): str, vol.Required(CONF_NAME): str})
+# DATA_SCHEMA = probatio.Schema({probatio.Required(CONF_ENTITY_ID): str, probatio.Required(CONF_NAME): str})
 
 
 async def validate_input(hass: core.HomeAssistant, entity_id, name):
@@ -40,8 +41,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for SS integration."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
     cameras = []
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> OptionsFlowHandler:
+        """Create the options flow."""
+        return OptionsFlowHandler()
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
@@ -73,14 +81,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "missing_name"
 
         entity_reg: EntityRegistry = er.async_get(self.hass)
-        Items: EntityRegistryItems = entity_reg.entities
-        for item in Items.values():
+        items: EntityRegistryItems = entity_reg.entities
+        for item in items.values():
             if item.domain == "camera" and item.disabled is False:
                 self.cameras.append(item.entity_id)
 
         data = {
-            vol.Required(CONF_NAME): str,
-            vol.Required(CONF_ENTITY_ID, default=False): selector.SelectSelector(
+            probatio.Required(CONF_NAME): str,
+            probatio.Required(CONF_ENTITY_ID, default=False): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=self.cameras, mode=selector.SelectSelectorMode.DROPDOWN
                 ),
@@ -89,7 +97,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(data),
+            data_schema=probatio.Schema(data),
             errors=errors,
         )
 
@@ -97,32 +105,36 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Flowhandler."""
 
-    cameras = []
-
     async def async_step_init(self, user_input=None):
         """Show form."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
         entity_reg: EntityRegistry = er.async_get(self.hass)
-        Items: EntityRegistryItems = entity_reg.entities
-        for item in Items.values():
-            if item.domain == "camera" and item.disabled is False:
-                self.cameras.append(item.entity_id)
+        current = self.config_entry.options.get(
+            CONF_ENTITY_ID, self.config_entry.data[CONF_ENTITY_ID]
+        )
+        cameras = [
+            item.entity_id
+            for item in entity_reg.entities.values()
+            if item.domain == "camera" and not item.disabled
+        ]
+        if current not in cameras:
+            cameras.append(current)
 
-        data_schema = {
-            vol.Required(CONF_NAME): str,
-            vol.Required(CONF_ENTITY_ID, default=False): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=self.cameras, mode=selector.SelectSelectorMode.DROPDOWN
+        data_schema = probatio.Schema(
+            {
+                probatio.Required(
+                    CONF_ENTITY_ID, default=current
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=cameras, mode=selector.SelectSelectorMode.DROPDOWN
+                    ),
                 ),
-            ),
-        }
+            }
+        )
 
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(data_schema))
-
-
-@callback
-def async_get_options_flow(config_entry):
-    """Optionflow callback."""
-    return OptionsFlowHandler(config_entry)
+        return self.async_show_form(step_id="init", data_schema=data_schema)
 
 
 class MissingentityidValue(exceptions.HomeAssistantError):
