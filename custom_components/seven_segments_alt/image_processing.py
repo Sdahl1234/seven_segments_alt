@@ -71,6 +71,8 @@ class ImageProcessingSsocr(SSEntity, ImageProcessingEntity):
     ) -> None:
         """Initialize seven segments processing."""
         super().__init__(coordinator)
+        # Loaded via async_load_platform, so there is no config entry to attach a device to.
+        self._attr_device_info = None
         self.hass = hass
         self.data_coordinator: SSDataCoordinator = coordinator
         self._attr_translation_key = translationkey
